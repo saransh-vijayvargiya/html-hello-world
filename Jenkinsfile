@@ -1,7 +1,3 @@
-+47
-Lines changed: 47 additions & 0 deletions
-Original file line number	Diff line number	Diff line change
-@@ -0,0 +1,47 @@
 pipeline {
     agent any
     environment {
