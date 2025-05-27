@@ -5,19 +5,19 @@ pipeline {
         DOCKERHUB_USER = 'saranshvijayvargiya'
         IMAGE_NAME = 'html-hello-world'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        DOCKER_USER = credentials('dockerhub-creds-username')  // Adjust if needed
-        DOCKER_PASS = credentials('dockerhub-creds-password')  // Adjust if needed
+        DOCKER_USER = credentials('dockerhub-creds-username')
+        DOCKER_PASS = credentials('dockerhub-creds-password')
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out latest code...'
-                checkout scm
-                
+                echo 'Cloning Git repository...'
+                git url: 'https://github.com/saransh-vijayvargiya/html-hello-world.git', branch: 'main'
+
                 echo 'Listing workspace files:'
                 sh 'ls -l'
-                
+
                 echo 'Showing index.html content:'
                 sh 'cat index.html'
             }
