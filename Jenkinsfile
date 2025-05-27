@@ -3,45 +3,31 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'html-hello-world'
-        DOCKERHUB_USER = 'saranshvijayvargiya'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone Repo') {
             steps {
                 git 'https://github.com/saransh-vijayvargiya/html-hello-world.git'
             }
         }
 
-        stage('Docker Build') {
+        stage('Build Docker Image') {
             steps {
-                sh "docker build -t $IMAGE_NAME ."
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh 'echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin'
-                    sh "docker tag $IMAGE_NAME $DOCKERHUB_USER/$IMAGE_NAME:latest"
-                    sh "docker push $DOCKERHUB_USER/$IMAGE_NAME:latest"
-                }
+                sh 'docker build -t ${IMAGE_NAME} .'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh "docker run -d -p 80:80 $IMAGE_NAME"
-            }
-        }
-    }
+                sh '''
+                # Stop and remove any existing container using the same image
+                docker ps -q --filter ancestor=${IMAGE_NAME} | xargs -r docker rm -f
 
-    post {
-        success {
-            echo 'Static HTML deployed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed.'
+                # Run the container on port 80
+                docker run -d -p 80:80 ${IMAGE_NAME}
+                '''
+            }
         }
     }
 }
