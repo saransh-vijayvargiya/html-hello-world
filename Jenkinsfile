@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'saranshvijayvargiya'   
+        DOCKERHUB_USER = 'saranshvijayvargiya'  // Replace with your Docker Hub username
         IMAGE_NAME = 'html-hello-world'
-        IMAGE_TAG = "${BUILD_NUMBER}"           
+        IMAGE_TAG = "${BUILD_NUMBER}"           // Jenkins build number as tag/version
     }
 
     stages {
@@ -44,12 +44,14 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                # Remove existing container(s) running the image
-                docker ps -q --filter ancestor=${DOCKERHUB_USER}/${IMAGE_NAME}:latest | xargs -r docker rm -f
+                # Stop and remove any running container named html-hello-world
+                docker rm -f html-hello-world || true
 
-                # Pull the latest image and run container
+                # Pull the latest image
                 docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
-                docker run -d -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+
+                # Run container with fixed name and map port 80
+                docker run -d --name html-hello-world -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
                 '''
             }
         }
