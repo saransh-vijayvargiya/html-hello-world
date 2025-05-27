@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/your-username/html-hello-world.git'
+                git 'https://github.com/saransh-vijayvargiya/html-hello-world.git'
             }
         }
         stage('Docker Build') {
