@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
+        DOCKERHUB_USER = 'your-dockerhub-username'      // ✅ Replace this
         IMAGE_NAME = 'html-hello-world'
+        IMAGE_TAG = "${BUILD_NUMBER}"                   // or use a timestamp for versioning
     }
 
     stages {
@@ -14,18 +16,40 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME} .'
+                sh '''
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh '''
+                docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
                 sh '''
-                # Stop and remove any existing container using the same image
-                docker ps -q --filter ancestor=${IMAGE_NAME} | xargs -r docker rm -f
+                # Remove existing container if running
+                docker ps -q --filter "ancestor=${DOCKERHUB_USER}/${IMAGE_NAME}" | xargs -r docker rm -f
 
-                # Run the container on port 80
-                docker run -d -p 80:80 ${IMAGE_NAME}
+                # Pull the latest image and run
+                docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                docker run -d -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
                 '''
             }
         }
