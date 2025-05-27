@@ -1,53 +1,45 @@
++47
+Lines changed: 47 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+@@ -0,0 +1,47 @@
 pipeline {
     agent any
-
     environment {
-        DOCKERHUB_USER = 'your-dockerhub-username'       // Change this
-        IMAGE_NAME = 'html-hello-world'                   // Change if needed
-        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'        // Your Jenkins Docker Hub creds ID
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        IMAGE_NAME = 'html-hello-world'
+        DOCKERHUB_USER = 'your-dockerhub-username'
     }
-
     stages {
         stage('Checkout') {
             steps {
-                // Checkout your GitHub repo
-                git 'https://github.com/saransh-vijayvargiya/html-hello-world.git'
+                git 'https://github.com/your-username/html-hello-world.git'
             }
         }
-
-        stage('Build & Tag Docker Image') {
+        stage('Docker Build') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}", ".")
-                    docker.tag("${IMAGE_NAME}:${IMAGE_TAG}", "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}")
-                    docker.tag("${IMAGE_NAME}:${IMAGE_TAG}", "${DOCKERHUB_USER}/${IMAGE_NAME}:latest")
+                sh "docker build -t $IMAGE_NAME ."
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh 'echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin'
+                    sh "docker tag $IMAGE_NAME $DOCKERHUB_USER/$IMAGE_NAME:latest"
+                    sh "docker push $DOCKERHUB_USER/$IMAGE_NAME:latest"
                 }
             }
         }
-
-        stage('Docker Login & Push') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', "${DOCKERHUB_CREDENTIALS}") {
-                        docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}").push()
-                        docker.image("${DOCKERHUB_USER}/${IMAGE_NAME}:latest").push()
-                    }
-                }
-            }
-        }
-
         stage('Deploy') {
             steps {
-                script {
-                    // Remove running container if exists
-                    sh """
-                    docker rm -f html-hello-world || true
-                    docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
-                    docker run -d --name html-hello-world -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
-                    """
-                }
+                sh "docker run -d -p 80:80 $IMAGE_NAME"
             }
+        }
+    }
+    post {
+        success {
+            echo 'Static HTML deployed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
