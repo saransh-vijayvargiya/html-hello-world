@@ -12,14 +12,15 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Cloning Git repository...'
-                git url: 'https://github.com/saransh-vijayvargiya/html-hello-world.git', branch: 'main'
-
-                echo 'Listing workspace files:'
-                sh 'ls -l'
-
-                echo 'Showing index.html content:'
-                sh 'cat index.html'
+                echo 'Cloning repo via shell git...'
+                sh '''
+                  git --version
+                  rm -rf *
+                  git clone https://github.com/saransh-vijayvargiya/html-hello-world.git .
+                  git checkout main
+                  ls -l
+                  cat index.html
+                '''
             }
         }
 
