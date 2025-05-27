@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'your-dockerhub-username'      // ✅ Replace this
+        DOCKERHUB_USER = 'your-dockerhub-username'      
         IMAGE_NAME = 'html-hello-world'
-        IMAGE_TAG = "${BUILD_NUMBER}"                   // or use a timestamp for versioning
+        IMAGE_TAG = "${BUILD_NUMBER}"                   
     }
 
     stages {
@@ -26,7 +26,7 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
@@ -45,10 +45,12 @@ pipeline {
             steps {
                 sh '''
                 # Remove existing container if running
-                docker ps -q --filter "ancestor=${DOCKERHUB_USER}/${IMAGE_NAME}" | xargs -r docker rm -f
+                docker ps -q --filter ancestor=${DOCKERHUB_USER}/${IMAGE_NAME}:latest | xargs -r docker rm -f
 
-                # Pull the latest image and run
+                # Pull latest image
                 docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+
+                # Run new container on port 80
                 docker run -d -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
                 '''
             }
