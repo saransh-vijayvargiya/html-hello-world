@@ -25,11 +25,25 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps {
-                sh "docker run -d -p 80:80 $IMAGE_NAME:latest"
-            }
+    steps {
+        script {
+            echo "Pulling latest image from Docker Hub..."
+            sh "docker pull ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+            echo "Stopping any existing container named ${CONTAINER_NAME}..."
+            sh """
+                if [ \$(docker ps -aq -f name=${CONTAINER_NAME}) ]; then
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                fi
+            """
+
+            echo "Running new container on port 80 with the latest image..."
+            sh "docker run -d -p 80:80 --name ${CONTAINER_NAME} ${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
         }
     }
+}
+
     post {
         success {
             echo 'Static HTML deployed successfully!'
