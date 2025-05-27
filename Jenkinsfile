@@ -32,7 +32,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    sh "docker rm -f $(docker ps -aq)"
+                    
                     sh "docker run -d -p 80:80 --name html-container $DOCKERHUB_USER/$IMAGE_NAME:latest"
                 }
             }
