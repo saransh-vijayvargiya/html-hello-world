@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     
-                    sh "docker run -d -p 80:80 --name html-container $DOCKERHUB_USER/$IMAGE_NAME:latest"
+                    sh "docker run -d -P --name html-container $DOCKERHUB_USER/$IMAGE_NAME:latest"
                 }
             }
         }
