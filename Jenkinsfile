@@ -2,19 +2,19 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = 'saranshvijayvargiya'  // Replace with your Docker Hub username
-        IMAGE_NAME = 'html-hello-world'
-        IMAGE_TAG = "${BUILD_NUMBER}"           // Jenkins build number as tag/version
+        DOCKERHUB_USER = 'saranshvijayvargiya' 
+        IMAGE_NAME = 'html-hello-world'          
+        IMAGE_TAG = "${BUILD_NUMBER}"            
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Checkout') {
             steps {
                 git 'https://github.com/saransh-vijayvargiya/html-hello-world.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Image') {
             steps {
                 sh '''
                 docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
@@ -24,7 +24,7 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push Image') {
             steps {
                 sh '''
                 docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
@@ -44,13 +44,13 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
-                # Stop and remove any running container named html-hello-world
-                docker rm -f html-hello-world || true
+                # Stop and remove any container using port 80
+                docker ps -q --filter "publish=80" | xargs -r docker rm -f || true
 
                 # Pull the latest image
                 docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
 
-                # Run container with fixed name and map port 80
+                # Run new container on port 80 with fixed name
                 docker run -d --name html-hello-world -p 80:80 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
                 '''
             }
