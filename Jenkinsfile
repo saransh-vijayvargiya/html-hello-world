@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         IMAGE_NAME = 'html-hello-world'
-        DOCKERHUB_USER = 'your-dockerhub-username'
+        DOCKERHUB_USER = 'saranshvijayvargiya'
     }
     stages {
         stage('Checkout') {
@@ -26,7 +26,7 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                sh "docker run -d -p 80:80 $IMAGE_NAME"
+                sh "docker run -d -p 80:80 $IMAGE_NAME:latest"
             }
         }
     }
